@@ -1,0 +1,14 @@
+zips/*
+venv/*
+builds/*
+*.ini
+*.terraform*
+*.tfplan
+*venv*
+*.csv
+infrastructure/infrastructure_module/lambdas/builds/*
+infrastructure/infrastructure_module/lambdas/zips/*
+.terraform
+*.tfplan
+.terraform.lock.hcl
+.terraform/*
