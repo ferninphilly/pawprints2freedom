@@ -1,13 +1,14 @@
 package facebook
 
-import (
-	util "github.com/ferninphilly/pawprints2freedom/utils"
-)
+import util "github.com/ferninphilly/pawprints2freedom/utils"
 
-type PageAccessToken struct {
-	Data []PageAccessData `json:"data"`
+type FBEndpoints struct {
+	FacebookConfig  *util.FacebookConfig
+	UserID          string
+	PageAccessData  []PageAccessData `json:"data"`
+	UserToken       string
+	PermAccessToken string
 }
-
 type PageAccessData struct {
 	AccessToken  string         `json:"access_token"`
 	Category     string         `json:"category"`
@@ -25,13 +26,8 @@ type CategoryList struct {
 type UserID struct {
 	ID string `json:"id"`
 }
-
-type FBEndpoints struct {
-	Config *util.Config
-	UserID string
-}
-
 type AccessTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
+	AccessToken string `json:"access_token,omitempty"`
+	TokenType   string `json:"token_type,omitempty"`
+	ExpiresIn   int32  `json:"expires_in,omitempty"`
 }

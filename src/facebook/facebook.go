@@ -3,61 +3,50 @@ package facebook
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
+	"log"
 
 	util "github.com/ferninphilly/pawprints2freedom/utils"
 )
 
 func NewFBEndpoints() *FBEndpoints {
-	var cfg util.Config
+	var cfg util.FacebookConfig
 	c := &cfg
-	if err := util.GetConfigData(c); err != nil {
-		fmt.Println("There was an error getting the fb config data due to ", err.Error())
+	if err := c.PopulateConfig(); err != nil {
+		log.Fatal("Error populating the facebook config due to ", err.Error())
 	}
-	return &FBEndpoints{Config: c}
+	return &FBEndpoints{FacebookConfig: c}
 }
 
-func (fb *FBEndpoints) GetPageAccessToken() interface{} {
-	fb.getCurrentUserID()
-	if &fb.UserID == nil {
-		fmt.Println("There is no UserID. Please run GetCurrentUserID() and try again!")
-		os.Exit(1)
-	}
-	url := fmt.Sprintf("%s/%s/accounts?access_token=%s", fb.Config.Facebook.BaseURL, fb.UserID, fb.Config.Facebook.UserToken)
-	var accessToken interface{}
-	fbRequest("GET", url, &accessToken)
-	return accessToken
-}
-
-func (fb *FBEndpoints) getCurrentUserID() {
-	url := fmt.Sprintf("%s/me?fields=id&access_token=%s", fb.Config.Facebook.BaseURL, fb.Config.Facebook.UserToken)
-	var currentUserID UserID
-	fbRequest("GET", url, &currentUserID)
-	fb.UserID = currentUserID.ID
-}
-
-func fbRequest(requestType string, url string, responseStruct interface{}) error {
-	req, err := http.NewRequest(requestType, url, nil)
+func (fb *FBEndpoints) GetPageAccessToken() error {
+	url := fmt.Sprintf("%s/oauth/access_token?client_id=%s&client_secret=%s&grant_type=client_credentials", fb.FacebookConfig.BaseURL, fb.FacebookConfig.AppID, fb.FacebookConfig.AppSecret)
+	bytesData, err := util.CallAPI("GET", url, "", "facebook")
+	var atr AccessTokenResponse
 	if err != nil {
-		fmt.Printf("Error getting this url: %s due to %s", url, err.Error())
+		log.Fatalf("Error Calling the API for Facebook due to %s", err.Error())
 		return err
 	}
-	req.Header.Add("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error making call to facebook due to ", err.Error())
-		os.Exit(1)
+	fmt.Println("Here is our response from the fb api: ", string(bytesData))
+	if err := json.Unmarshal(bytesData, &atr); err != nil {
+		log.Fatalf("Error unmarshalling this %s into fb.PageAccessData due to %s", string(bytesData), err.Error())
+		return err
 	}
-	defer resp.Body.Close()
+	fb.UserToken = fb.FacebookConfig.UserToken
+	fb.PermAccessToken = atr.AccessToken
+	return nil
+}
 
-	bodyBytes, err := io.ReadAll(resp.Body)
+func (fb *FBEndpoints) getCurrentUserID() error {
+	url := fmt.Sprintf("%s/me?fields=id&access_token=%s", fb.FacebookConfig.BaseURL, fb.FacebookConfig.UserToken)
+	var currentUserID UserID
+	bytesData, err := util.CallAPI("GET", url, "", "facebook")
 	if err != nil {
-		fmt.Println("Error received from FB: ", err.Error())
+		fmt.Printf("Error Calling the API for Facebook due to %s", err.Error())
+		return err
 	}
-	fmt.Println("Here is the return from FB ", string(bodyBytes))
-	json.Unmarshal(bodyBytes, &responseStruct)
+	if err := json.Unmarshal(bytesData, &currentUserID); err != nil {
+		log.Fatalf("Error unmarshalling this %s into currentUserID due to %s", string(bytesData), err.Error())
+		return err
+	}
+	fb.UserID = currentUserID.ID
 	return nil
 }
