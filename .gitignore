@@ -12,3 +12,4 @@ infrastructure/infrastructure_module/lambdas/zips/*
 *.tfplan
 .terraform.lock.hcl
 .terraform/*
+artifacts/*
