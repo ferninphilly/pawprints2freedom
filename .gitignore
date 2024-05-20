@@ -13,3 +13,4 @@ infrastructure/infrastructure_module/lambdas/zips/*
 .terraform.lock.hcl
 .terraform/*
 artifacts/*
+terragrunt.hcl
